@@ -1,0 +1,4 @@
+query,name,top_hit,lookup_score
+Q1,creatinine,J18 Pneumonia,0
+Q2,hemoglobin,J18 Pneumonia,0
+Q3,platelets,J18 Pneumonia,0
