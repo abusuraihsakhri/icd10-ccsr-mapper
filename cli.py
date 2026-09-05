@@ -3,13 +3,56 @@ Command Line Interface for Icd10 Ccsr Mapper.
 """
 import argparse
 import csv
-import json
+import os
 import sys
+from pathlib import Path
 from agents.models import SystemTaskPayload
 from agents.supervisor import SystemSupervisor
 from agents.base import AuditLogger
 
 supervisor = SystemSupervisor(model_provider="mock")
+
+
+def _parse_bool(value) -> bool:
+    """Parse a boolean from various string/number representations."""
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value != 0
+    if isinstance(value, str):
+        return value.strip().lower() in ("true", "1", "yes", "on")
+    return False
+
+
+def _validate_input_path(path_str: str) -> Path:
+    """Validate input file exists and has no path traversal attempts."""
+    # Reject obvious traversal patterns in the raw input
+    if ".." in path_str.split(os.sep) or ".." in path_str.split("/"):
+        raise argparse.ArgumentTypeError(
+            f"Input path '{path_str}' contains path traversal characters (..)."
+        )
+    path = Path(path_str).resolve()
+    if not path.exists():
+        raise argparse.ArgumentTypeError(f"Input file '{path_str}' does not exist.")
+    if not path.is_file():
+        raise argparse.ArgumentTypeError(f"Input path '{path_str}' is not a file.")
+    return path
+
+
+def _validate_output_path(path_str: str) -> Path:
+    """Validate output file path has a safe extension and no traversal attempts."""
+    # Reject obvious traversal patterns in the raw input
+    if ".." in path_str.split(os.sep) or ".." in path_str.split("/"):
+        raise argparse.ArgumentTypeError(
+            f"Output path '{path_str}' contains path traversal characters (..)."
+        )
+    path = Path(path_str).resolve()
+    allowed_extensions = {".csv", ".json", ".txt", ".log"}
+    if path.suffix.lower() not in allowed_extensions:
+        raise argparse.ArgumentTypeError(
+            f"Output file extension '{path.suffix}' not allowed. Use: {', '.join(allowed_extensions)}"
+        )
+    return path
 
 
 def main(argv=None):
@@ -31,8 +74,8 @@ def main(argv=None):
 
     # Batch
     p_batch = subparsers.add_parser("batch", help="Batch process CSV records")
-    p_batch.add_argument("-i", "--input", required=True)
-    p_batch.add_argument("-o", "--output", default="results.csv")
+    p_batch.add_argument("-i", "--input", required=True, type=_validate_input_path)
+    p_batch.add_argument("-o", "--output", default="results.csv", type=_validate_output_path)
 
     # Verify Audit
     subparsers.add_parser("verify-audit", help="Verify HMAC audit trail integrity")
@@ -94,7 +137,7 @@ def main(argv=None):
                 primary_metric=float(r.get("primary_metric", 15.0)),
                 secondary_metric=float(r.get("secondary_metric", 5.0)),
                 status_descriptor=r.get("status_descriptor", "NOMINAL"),
-                is_critical_flag=bool(r.get("is_critical_flag", False)),
+                is_critical_flag=_parse_bool(r.get("is_critical_flag", False)),
             )
             dossier = supervisor.process_task(payload)
             row_dict = dict(r)

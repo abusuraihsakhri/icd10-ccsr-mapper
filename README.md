@@ -1,108 +1,122 @@
-# ICD10 Ccsr Mapper
+# ICD-10 to CCSR Mapper
 
 > **Domain:** Clinical Decision Support & Biomedical Computing  
-> **Reference Guidelines & Standards:** `Standard Clinical Formulations & ISO/IEC Quality Frameworks`
-
-<div align="center">
+> **Standards:** CAP / CLSI / ISO
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 ![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-3776AB.svg?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688.svg?logo=fastapi&logoColor=white)
-![Audit Trail](https://img.shields.io/badge/Audit-HMAC--SHA256_Tamper--Evident-brightgreen.svg)
-![Zero-PHI Guard](https://img.shields.io/badge/Guard-Zero--PHI_Outbound-blue.svg)
-![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)
-
-</div>
 
 ---
 
-## 📖 What It Does
+## What It Does
 
-ICD-10 to CCSR Mapper
-Maps ICD-10 codes to AHRQ CCSR v2023 categories for comorbidity grouping and HCUP analysis.
-Stdlib parser / mapper with batch CSV and single lookup.
+Maps ICD-10 diagnosis codes to AHRQ CCSR v2023 categories for comorbidity grouping and HCUP analysis.
 
----
-
-## ⚙️ Key Capabilities & Algorithmic Modules
-
-### 🔬 Analytical Functions
-
-- **`lookup()`**: Single lookup: token overlap + substring scoring (no deps). Returns top hits.
-- **`process_csv()`** — calculates and validates process_csv parameters.
-- **`build_parser()`** — calculates and validates build_parser parameters.
-- **`main()`** — calculates and validates main parameters.
+- **Single lookup**: Token overlap + substring scoring with a built-in demo dictionary
+- **Batch CSV processing**: Process multiple ICD-10 codes from a CSV file
+- **Multi-worker analysis**: Three specialized workers (QC, Safety, Protocol) evaluate tasks
+- **FastAPI REST API**: OpenAPI 3.1 endpoints with Prometheus metrics
 
 ---
 
-## 📐 Mathematical Formulation & Logic
+## Installation
 
-```text
-  score = 0
-```
-
----
-
-## 💻 CLI Quickstart & Usage
-
-### 1. Guided Interactive Mode
 ```bash
-python cli.py
+pip install -r requirements.txt
 ```
 
-### 2. Direct Parameterized Evaluation
+---
+
+## Usage
+
+### Single Lookup (stdlib mapper)
 ```bash
-python cli.py --task-id <value> --target <value> --primary <value> --secondary <value>
+python cli.py single "I10 Hypertension"
+python ccsr_mapper.py single "Hypertension"
 ```
 
-### Parameter Reference
-- `--task-id`: Specifies input measurement or parameter value.
-- `--target`: Specifies input measurement or parameter value.
-- `--primary`: Specifies input measurement or parameter value.
-- `--secondary`: Specifies input measurement or parameter value.
-- `--critical`: Specifies input measurement or parameter value.
-- `--status`: Specifies input measurement or parameter value.
-- `--input`: Specifies input measurement or parameter value.
-- `--output`: Specifies input measurement or parameter value.
+### Batch CSV Processing
+```bash
+python cli.py batch -i sample.csv -o results.csv
+python ccsr_mapper.py batch --input sample.csv --output results.csv
+```
 
-### Input Data Schema
+### Audit (multi-worker supervisor)
+```bash
+python cli.py audit --task-id TASK-001 --primary 28.5 --secondary 14.2
+python cli.py chat "Explain the analysis"
+python cli.py verify-audit
+```
 
-| Field | Description | Requirement |
-|:------|:------------|:------------|
-| `query` | Parameter / observation metric | Required |
-| `name` | Parameter / observation metric | Required |
+### REST API Server
+```bash
+python cli.py serve --host 127.0.0.1 --port 8000
+# Or with Docker:
+docker-compose up
+```
+
+### API Endpoints
+- `GET /health` - Health check
+- `GET /metrics` - Prometheus metrics
+- `POST /api/audit` - Dispatch task for multi-worker evaluation
+- `POST /api/chat` - Supervisory chat query
+- `GET /api/audit/logs` - Retrieve HMAC audit trail
 
 ---
 
-## 🛡️ Security & Enterprise Architecture
+## Security Features
 
-* **Zero-PHI Outbound Interceptor:** Active AST and regex inspection blocking SSNs, MRNs, phone numbers, and patient identifiers.
-* **Tamper-Evident HMAC-SHA256 Audit Trail:** Chained, cryptographically signed logs for every evaluation and state transition.
-* **Air-Gapped LLM Reasoning Adapter:** Agnostic integration for local Ollama instances (`llama3`, `mistral`), Claude 3.5 Sonnet, GPT-4o, and deterministic test mocks.
-* **Active Learning Bayesian Calibration:** Dynamic tracker updating worker reliability weights and monitoring Brier calibration drift.
-* **FastAPI & Prometheus Telemetry:** Exposes OpenAPI 3.1 REST endpoints and operational Prometheus metrics (`/metrics`).
+- **PHI Outbound Guard**: Blocks SSNs, MRNs, phone numbers, emails, and patient identifiers from audit logs
+- **HMAC-SHA256 Audit Trail**: Cryptographically chained, tamper-evident logs
+- **Path Traversal Protection**: CLI validates input/output paths to prevent directory traversal attacks
+- **Input Validation**: Strict type checking and file extension validation for batch operations
 
 ---
 
-## 🧪 Testing & Verification
+## Configuration
 
-Run the automated test suite:
+Set the audit secret key (required for production):
+
+```bash
+export AUDIT_SECRET_KEY="your-secure-random-key"
+```
+
+Without this, the system uses an ephemeral random key (audit integrity not preserved across restarts).
+
+---
+
+## Testing
 
 ```bash
 pytest -v
 ```
 
-Execute high-throughput batch simulation benchmarks:
+Run simulation benchmark:
 
 ```bash
-python simulator.py --tasks 1000 --concurrency 8
+python simulator.py 1000
 ```
 
 ---
 
-## 🐳 Container Deployment
+## Project Structure
 
-```bash
-docker build -t icd10-ccsr-mapper .
-docker run -p 8000:8000 icd10-ccsr-mapper
+```
+icd10-ccsr-mapper/
+├── agents/              # Multi-worker analysis agents
+│   ├── base.py          # PHI guard, HMAC audit trail, security
+│   ├── supervisor.py    # Task orchestration
+│   ├── workers.py       # QC, Safety, Protocol workers
+│   ├── api.py           # FastAPI REST endpoints
+│   └── models.py        # Pydantic schemas
+├── tests/               # Pytest test suite
+├── cli.py               # Main CLI entry point
+├── ccsr_mapper.py       # Stdlib ICD-10/CCSR mapper
+├── enrichment.py        # Analytics engines
+├── simulator.py         # Load/stress testing
+├── requirements.txt     # Python dependencies
+├── Dockerfile           # Container image
+├── docker-compose.yml   # Service orchestration
+└── web/                 # Operations console (HTML)
 ```

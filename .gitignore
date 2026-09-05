@@ -1,5 +1,16 @@
 __pycache__/
 *.pyc
 .venv/
+.pytest_cache/
 results.csv
 output.csv
+tmp_test_out.csv
+*.pyo
+.env
+.egg-info/
+dist/
+build/
+*.egg
+.coverage
+htmlcov/
+.DS_Store
