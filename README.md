@@ -1,122 +1,64 @@
-# ICD-10 to CCSR Mapper
+# ICD-10-CM to CCSR Mapper
 
-> **Domain:** Clinical Decision Support & Biomedical Computing  
-> **Standards:** CAP / CLSI / ISO
+Exact lookup of ICD-10-CM diagnosis codes in a user-supplied **AHRQ Clinical Classifications Software Refined (CCSR)** diagnosis mapping release. The application preserves all category assignments and the inpatient and outpatient default CCSR values when present.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-3776AB.svg?logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688.svg?logo=fastapi&logoColor=white)
+**Mapping data is not bundled.** Download the diagnosis-tool ZIP from [AHRQ HCUP](https://hcup-us.ahrq.gov/toolssoftware/ccsr/dxccsr.jsp) and extract its `DXCCSR_vYYYY-R.csv` file. Select a release appropriate for the coding period. Do not use an ICD-10-PCS procedure crosswalk.
 
----
+## Browser application
 
-## What It Does
+Open `web/index.html` in a modern browser, select the extracted AHRQ CSV, and enter one or more ICD-10-CM diagnosis codes. The app performs exact matching, displays all associated CCSR categories and defaults, and exports the complete result set to CSV.
 
-Maps ICD-10 diagnosis codes to AHRQ CCSR v2023 categories for comorbidity grouping and HCUP analysis.
+All browser mapping data stays on the user's device. No API requests, accounts, or external script dependencies are required for processing. Unknown or invalid codes are identified, not guessed. Large result sets show a preview of the first 200 rows; the downloadable CSV contains the full batch (up to 5,000 submitted codes).
 
-- **Single lookup**: Token overlap + substring scoring with a built-in demo dictionary
-- **Batch CSV processing**: Process multiple ICD-10 codes from a CSV file
-- **Multi-worker analysis**: Three specialized workers (QC, Safety, Protocol) evaluate tasks
-- **FastAPI REST API**: OpenAPI 3.1 endpoints with Prometheus metrics
+## Python command line
 
----
-
-## Installation
+Requires Python 3.10 or later. The mapping engine itself uses only the standard library.
 
 ```bash
-pip install -r requirements.txt
+python ccsr_mapper.py single E11.9 --mapping /path/to/DXCCSR_vYYYY-R.csv
+python ccsr_mapper.py batch --mapping /path/to/DXCCSR_vYYYY-R.csv \
+  --input diagnoses.csv --output mapped.csv --column code
 ```
 
----
+Example input `diagnoses.csv`:
 
-## Usage
-
-### Single Lookup (stdlib mapper)
-```bash
-python cli.py single "I10 Hypertension"
-python ccsr_mapper.py single "Hypertension"
+```csv
+code
+E11.9
+I10
+Z99.99
 ```
 
-### Batch CSV Processing
-```bash
-python cli.py batch -i sample.csv -o results.csv
-python ccsr_mapper.py batch --input sample.csv --output results.csv
-```
+Batch output appends `ccsr_found`, semicolon-separated `ccsr_categories`, `ccsr_inpatient_default`, `ccsr_outpatient_default`, and `ccsr_error`. Original input columns are retained. For datasets with multiple diagnoses per encounter, map each diagnosis separately; choose inpatient/outpatient defaults according to the AHRQ methodology rather than assuming that the first category is the default.
 
-### Audit (multi-worker supervisor)
-```bash
-python cli.py audit --task-id TASK-001 --primary 28.5 --secondary 14.2
-python cli.py chat "Explain the analysis"
-python cli.py verify-audit
-```
+## Optional API and existing audit utilities
 
-### REST API Server
-```bash
-python cli.py serve --host 127.0.0.1 --port 8000
-# Or with Docker:
-docker-compose up
-```
-
-### API Endpoints
-- `GET /health` - Health check
-- `GET /metrics` - Prometheus metrics
-- `POST /api/audit` - Dispatch task for multi-worker evaluation
-- `POST /api/chat` - Supervisory chat query
-- `GET /api/audit/logs` - Retrieve HMAC audit trail
-
----
-
-## Security Features
-
-- **PHI Outbound Guard**: Blocks SSNs, MRNs, phone numbers, emails, and patient identifiers from audit logs
-- **HMAC-SHA256 Audit Trail**: Cryptographically chained, tamper-evident logs
-- **Path Traversal Protection**: CLI validates input/output paths to prevent directory traversal attacks
-- **Input Validation**: Strict type checking and file extension validation for batch operations
-
----
-
-## Configuration
-
-Set the audit secret key (required for production):
+Install dependencies and launch the development API:
 
 ```bash
-export AUDIT_SECRET_KEY="your-secure-random-key"
+python -m pip install -r requirements.txt
+export AUDIT_SECRET_KEY="replace-with-a-strong-random-secret"
+export CCSR_MAPPING_CSV="/absolute/path/to/DXCCSR_vYYYY-R.csv"
+python cli.py serve
 ```
 
-Without this, the system uses an ephemeral random key (audit integrity not preserved across restarts).
+`GET /api/ccsr/E11.9` serves exact mapping from the configured file; without `CCSR_MAPPING_CSV`, it returns HTTP 503. `GET /health` returns API health. Existing `cli.py audit`, `cli.py batch`, `cli.py chat`, `POST /api/audit`, and audit-log endpoints remain as **separate, generic demonstration utilities**, not CCSR coding/clinical scoring functions. The mock chat response is not a clinical interpretation. These endpoints do not implement user authentication; do not expose the development server or audit logs to untrusted networks.
 
----
+The container configuration uses `requirements.txt`, runs under a non-root user, and binds Docker Compose's published port to localhost. To use CCSR lookup in Docker, mount the mapping file into the container and set `CCSR_MAPPING_CSV` to its *container* path.
 
-## Testing
+## Validation and security
 
 ```bash
-pytest -v
+python -m pytest -q
+python -m compileall -q ccsr_mapper.py cli.py agents tests
 ```
 
-Run simulation benchmark:
+GitHub Actions runs Python tests on 3.10–3.12 and checks browser-script syntax. The application does not infer assignments without the official mapping file. Exported CSV values are protected against spreadsheet-formula interpretation.
 
-```bash
-python simulator.py 1000
-```
+The legacy audit subsystem maintains an HMAC-SHA256 chained log **in memory** and can detect modifications to signed entries. Its identifier-pattern guard is heuristic, not validated de-identification or HIPAA compliance. Neither the in-memory log nor the local browser supports regulated patient-data storage. Use de-identified research input only.
 
----
+## Technology and compatibility
 
-## Project Structure
+Python standard library for the mapper; FastAPI, Pydantic and Uvicorn for the optional server; HTML, CSS and vanilla JavaScript for the local browser. Requires a modern browser with File API, Blob, and JavaScript enabled (current Chromium, Firefox, Safari). The browser version does not require Pyodide or a Python server. This project is licensed under [MIT](LICENSE).
 
-```
-icd10-ccsr-mapper/
-├── agents/              # Multi-worker analysis agents
-│   ├── base.py          # PHI guard, HMAC audit trail, security
-│   ├── supervisor.py    # Task orchestration
-│   ├── workers.py       # QC, Safety, Protocol workers
-│   ├── api.py           # FastAPI REST endpoints
-│   └── models.py        # Pydantic schemas
-├── tests/               # Pytest test suite
-├── cli.py               # Main CLI entry point
-├── ccsr_mapper.py       # Stdlib ICD-10/CCSR mapper
-├── enrichment.py        # Analytics engines
-├── simulator.py         # Load/stress testing
-├── requirements.txt     # Python dependencies
-├── Dockerfile           # Container image
-├── docker-compose.yml   # Service orchestration
-└── web/                 # Operations console (HTML)
-```
+**Data source:** AHRQ, [Clinical Classifications Software Refined for ICD-10-CM Diagnoses](https://hcup-us.ahrq.gov/toolssoftware/ccsr/dxccsr.jsp). The available release and exact mappings may change; verify applicability to the study period.
