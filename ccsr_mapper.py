@@ -11,7 +11,7 @@ import re
 import sys
 from pathlib import Path
 
-CODE_PATTERN = re.compile(r"^[A-TV-Z][0-9][A-Z0-9]{1,5}$", re.ASCII)
+CODE_PATTERN = re.compile(r"^[A-Z][0-9][A-Z0-9]{1,5}$", re.ASCII)
 CATEGORY_PATTERN = re.compile(r"^CCSR CATEGORY ([0-9]+)$")
 
 
