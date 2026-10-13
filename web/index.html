@@ -1,236 +1,159 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Icd10 Ccsr Mapper — Operations Console</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #090d16;
-            --card: #111827;
-            --border: #1f293d;
-            --accent: #3b82f6;
-            --accent-glow: rgba(59, 130, 246, 0.25);
-            --text: #f3f4f6;
-            --text-muted: #9ca3af;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --success: #10b981;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            padding: 2rem;
-            min-height: 100vh;
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        .header-title h1 { font-size: 1.6rem; font-weight: 700; color: #fff; }
-        .header-title p { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem; }
-        .badge {
-            display: inline-block;
-            padding: 0.3rem 0.8rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            background: var(--accent-glow);
-            color: var(--accent);
-            border: 1px solid var(--accent);
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1.2fr;
-            gap: 1.5rem;
-        }
-        .card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-        }
-        .card h2 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .form-group { margin-bottom: 1rem; }
-        label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.4rem; }
-        input, select, textarea {
-            width: 100%;
-            padding: 0.65rem 0.9rem;
-            background: #0d1322;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: #fff;
-            font-family: inherit;
-            font-size: 0.9rem;
-        }
-        input:focus, textarea:focus { outline: none; border-color: var(--accent); }
-        .btn {
-            background: var(--accent);
-            color: #fff;
-            border: none;
-            padding: 0.7rem 1.4rem;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-            width: 100%;
-        }
-        .btn:hover { background: #2563eb; }
-        .terminal {
-            background: #060911;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem;
-            color: #10b981;
-            height: 380px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-        }
-        .metrics-bar {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        .metric-box {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
-            text-align: center;
-        }
-        .metric-val { font-size: 1.4rem; font-weight: 700; color: #fff; margin-top: 0.25rem; }
-        .metric-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
-    </style>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ICD-10-CM → CCSR Mapper</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#162e40;background:#f4f7fa}*{box-sizing:border-box}
+body{margin:0}main{max-width:1080px;margin:auto;padding:32px 18px}h1{font-size:clamp(1.5rem,3vw,2.2rem);margin:0}
+h2{font-size:1.2rem;margin:0 0 12px}p{line-height:1.55}.muted,small{color:#476278}
+.layout{display:grid;grid-template-columns:1fr 1.1fr;gap:18px;margin-top:24px}.card{background:#fff;border:1px solid #d5e1e8;border-radius:12px;padding:24px;min-width:0}
+label{display:block;font-weight:650;margin:16px 0 6px}input[type=file],textarea{width:100%;padding:11px;border-radius:7px;border:1px solid #9db0c1;font:inherit}
+textarea{min-height:180px;font-family:ui-monospace,Consolas,monospace}
+button{background:#11639c;color:#fff;border:0;border-radius:7px;padding:11px 16px;font:inherit;font-weight:650;cursor:pointer;margin:14px 8px 0 0}
+button:disabled{background:#94a5b2;cursor:not-allowed}button:hover:not(:disabled){background:#064873}
+button.secondary{background:#e3eef5;color:#124662;border:1px solid #9db9c9}button:focus-visible,input:focus-visible,textarea:focus-visible,a:focus-visible{outline:3px solid #2280ca;outline-offset:2px}
+.status{background:#eaf3fa;border-left:4px solid #3a85b2;padding:12px;margin:16px 0;overflow-wrap:anywhere}.status.error{background:#fff0ef;border-color:#b73e37;color:#913128}
+.stats{display:flex;gap:16px;margin:16px 0}.stats strong{display:block;font-size:1.35rem}.stats div{background:#edf3f7;padding:8px 15px;border-radius:8px}
+.results{max-height:540px;overflow:auto}.result{border-top:1px solid #d5e1e8;padding:12px 0}.result h3{margin:0;font-size:1rem}.result ul{margin:5px 0;padding-left:22px}
+.bad{color:#ae352b}.footer{font-size:.9rem;color:#526a7c;margin-top:20px}
+@media(max-width:760px){.layout{grid-template-columns:1fr}.card{padding:18px}main{padding:20px 14px}}
+</style>
 </head>
-<body>
-
-    <div class="header">
-        <div class="header-title">
-            <h1>Icd10 Ccsr Mapper</h1>
-            <p>Domain: Clinical & Cryptographic AI | Standard: CAP / CLSI / NIST Standards | LabMind-Atlas Architecture</p>
-        </div>
-        <div>
-            <span class="badge">Air-Gapped Active</span>
-            <span class="badge" style="background: rgba(16,185,129,0.2); color: #10b981; border-color: #10b981;">Zero-PHI Guard Active</span>
-        </div>
-    </div>
-
-    <div class="metrics-bar">
-        <div class="metric-box">
-            <div class="metric-label">System Status</div>
-            <div class="metric-val" style="color: var(--success);" id="m-status">OPTIMAL</div>
-        </div>
-        <div class="metric-box">
-            <div class="metric-label">Tasks Processed</div>
-            <div class="metric-val" id="m-tasks">142</div>
-        </div>
-        <div class="metric-box">
-            <div class="metric-label">Audit Blocks Signed</div>
-            <div class="metric-val" id="m-audit">142</div>
-        </div>
-        <div class="metric-box">
-            <div class="metric-label">PHI Interceptions</div>
-            <div class="metric-val" style="color: var(--accent);" id="m-phi">0</div>
-        </div>
-    </div>
-
-    <div class="grid">
-        <div class="card">
-            <h2>⚙️ Dispatch Distributed Component Audit</h2>
-            <div class="form-group">
-                <label>Task / Sample ID</label>
-                <input type="text" id="task_id" value="TASK-2026-LIVE-01">
-            </div>
-            <div class="form-group">
-                <label>Target Identifier</label>
-                <input type="text" id="target_id" value="SPECIMEN-ALPHA-77">
-            </div>
-            <div class="form-group">
-                <label>Primary Measurement / Value</label>
-                <input type="number" id="primary_metric" value="29.4" step="0.1">
-            </div>
-            <div class="form-group">
-                <label>Secondary Metric / Kinetic Index</label>
-                <input type="number" id="secondary_metric" value="14.8" step="0.1">
-            </div>
-            <div class="form-group">
-                <label>Status / Phenotype Descriptor</label>
-                <input type="text" id="status_descriptor" value="DISCORDANT_ANOMALY">
-            </div>
-            <div class="form-group">
-                <label><input type="checkbox" id="is_critical" checked> Trigger Emergency / Critical Flag</label>
-            </div>
-            <button class="btn" onclick="runAudit()">Execute Distributed Component Audit</button>
-        </div>
-
-        <div class="card">
-            <h2>📊 Real-Time Consensus Dossier & Audit Log</h2>
-            <div class="terminal" id="outputConsole">// Icd10 Ccsr Mapper Operations Console Ready
-// Connection established with Air-Gapped Supervisor
-// Cryptographic HMAC-SHA256 audit ledger loaded.
-// Ready for live task payload dispatch...</div>
-        </div>
-    </div>
-
-    <script>
-        async function runAudit() {
-            const consoleEl = document.getElementById('outputConsole');
-            consoleEl.innerText = "// Dispatching task across specialized workers...
-// Invoking InvariantQCWorker, SafetyEscalationWorker, ProtocolWorker...";
-
-            const payload = {
-                task_id: document.getElementById('task_id').value,
-                target_identifier: document.getElementById('target_id').value,
-                primary_metric: parseFloat(document.getElementById('primary_metric').value),
-                secondary_metric: parseFloat(document.getElementById('secondary_metric').value),
-                status_descriptor: document.getElementById('status_descriptor').value,
-                is_critical_flag: document.getElementById('is_critical').checked
-            };
-
-            try {
-                const res = await fetch('/api/audit', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                consoleEl.innerText = JSON.stringify(data, null, 2);
-                document.getElementById('m-tasks').innerText = parseInt(document.getElementById('m-tasks').innerText) + 1;
-                document.getElementById('m-audit').innerText = parseInt(document.getElementById('m-audit').innerText) + 1;
-            } catch (err) {
-                consoleEl.innerText = "// Offline / Simulation Output:\n" + JSON.stringify({
-                    dossier_id: "DOSSIER-SIM-" + Math.floor(Math.random()*10000),
-                    system: "icd10-ccsr-mapper",
-                    domain: "Clinical & Cryptographic AI",
-                    task_id: payload.task_id,
-                    overall_urgency: payload.is_critical_flag ? "CRITICAL_STAT_PANIC" : "ELEVATED_RISK",
-                    integrity_status: "DISCORDANT_ANOMALY",
-                    alerts: [
-                        { worker: "InvariantQCWorker", alert: "Primary metric exceeds upper reference bound" },
-                        { worker: "SafetyEscalationWorker", alert: "Critical emergency interlock flag active" }
-                    ],
-                    audit_hash: "HMAC_SHA256_e83f9a72b941d6c381f9"
-                }, null, 2);
-            }
-        }
-    </script>
-</body>
-</html>
+<body><main>
+<header><h1>ICD-10-CM → CCSR Mapper</h1><p class="muted">Exact diagnosis-code classification from an AHRQ mapping CSV you select. All processing is local to your browser.</p></header>
+<div class="layout">
+<section class="card" aria-labelledby="mapping-title">
+<h2 id="mapping-title">1. Load mapping data</h2>
+<p>Download the diagnosis mapping ZIP from <a href="https://hcup-us.ahrq.gov/toolssoftware/ccsr/dxccsr.jsp" target="_blank" rel="noopener noreferrer">AHRQ's CCSR site</a>. Extract the <code>DXCCSR_vYYYY-R.csv</code> file and select it below.</p>
+<label for="file">AHRQ diagnosis mapping CSV</label><input id="file" type="file" accept=".csv,text/csv" aria-describedby="file-note">
+<small id="file-note">Use the CCSR release appropriate to the coding year. Data is not uploaded.</small>
+<div id="status" class="status" role="status" aria-live="polite">No mapping file loaded.</div>
+<h2>2. Enter diagnosis codes</h2>
+<label for="codes">ICD-10-CM codes</label><textarea id="codes" spellcheck="false" placeholder="I10&#10;E11.9&#10;J18.9" aria-describedby="code-note"></textarea>
+<small id="code-note">One per line; commas and semicolons also accepted. Unknown codes are not guessed.</small>
+<div><button id="lookup" type="button" disabled>Map codes</button><button id="export" type="button" class="secondary" disabled>Download CSV</button></div>
+</section>
+<section class="card" aria-labelledby="results-title">
+<h2 id="results-title">Mapping results</h2><p class="muted">All category assignments, plus available inpatient and outpatient defaults. No approximate matching.</p>
+<div class="stats"><div><strong id="total">0</strong>Checked</div><div><strong id="matched">0</strong>Mapped</div><div><strong id="missing">0</strong>Unmapped</div></div>
+<div id="results" class="results" aria-live="polite">Select a mapping file to begin.</div>
+</section></div>
+<p class="footer">Results depend entirely on the selected mapping release. CCSR supports administrative and research classification, not clinical decisions. Do not use identifiable patient records.</p>
+</main>
+<script>
+(() => {
+"use strict";
+const el = id => document.getElementById(id);
+const header = value => String(value || "").trim().toUpperCase().replace(/[_-]/g," ").replace(/\s+/g," ");
+const normCode = value => String(value || "").toUpperCase().replace(/[.\s]/g,"");
+const valid = code => /^[A-Z][0-9][A-Z0-9]{1,5}$/.test(code);
+let index = null, results = [];
+function setStatus(value,error=false){el("status").textContent=value;el("status").classList.toggle("error",error);}
+function parseCSV(content){
+  const rows=[];let row=[],cell="",inside=false;
+  for(let i=0;i<content.length;i++){
+    const ch=content[i];
+    if(ch==='"'){if(inside&&content[i+1]==='"'){cell+='"';i++;}else inside=!inside;}
+    else if(ch===","&&!inside){row.push(cell);cell="";}
+    else if((ch==="\r"||ch==="\n")&&!inside){
+      if(ch==="\r"&&content[i+1]==="\n")i++;
+      row.push(cell);cell="";
+      if(row.some(x=>x!==""))rows.push(row);
+      row=[];
+    }else cell+=ch;
+  }
+  if(inside)throw Error("Unclosed CSV quote");
+  row.push(cell);if(row.some(x=>x!==""))rows.push(row);
+  return rows;
+}
+function parseMapping(content){
+  const rows=parseCSV(content.replace(/^\uFEFF/,""));
+  if(rows.length<2)throw Error("The mapping file is empty");
+  const columns=rows.shift().map(header), col=name=>columns.indexOf(name);
+  const codeIndex=["ICD 10 CM CODE","ICD10CM CODE","ICD 10 CM","ICD 10 CODE"].map(col).find(x=>x>=0);
+  if(codeIndex===undefined)throw Error("ICD-10-CM CODE column not found");
+  const categoryColumns=columns.map((value,i)=>({match:/^CCSR CATEGORY ([0-9]+)$/.exec(value),i}))
+    .filter(x=>x.match).map(x=>({number:Number(x.match[1]),i:x.i,desc:col("CCSR CATEGORY "+x.match[1]+" DESCRIPTION")}))
+    .sort((a,b)=>a.number-b.number);
+  if(!categoryColumns.length)throw Error("CCSR CATEGORY columns not found");
+  const desc=col("ICD 10 CM CODE DESCRIPTION"), inp=col("INPATIENT DEFAULT CCSR"),out=col("OUTPATIENT DEFAULT CCSR");
+  const map=new Map();
+  for(const row of rows){
+    const raw=(row[codeIndex]||"").trim();if(!raw)continue;
+    const code=normCode(raw);
+    if(!valid(code))throw Error("Invalid code in mapping: "+raw);
+    if(map.has(code))throw Error("Duplicate mapping code: "+code);
+    const categories=categoryColumns.map(c=>({code:(row[c.i]||"").trim().toUpperCase(),description:c.desc<0?"":(row[c.desc]||"").trim()})).filter(c=>c.code);
+    if(!categories.length)throw Error("Missing category for "+code);
+    map.set(code,{code,description:desc<0?"":(row[desc]||"").trim(),categories,
+      inpatient:inp<0?"":(row[inp]||"").trim(),outpatient:out<0?"":(row[out]||"").trim()});
+  }
+  if(!map.size)throw Error("No code mappings found");
+  return map;
+}
+el("file").addEventListener("change",async event=>{
+  index=null;results=[];el("lookup").disabled=true;el("export").disabled=true;
+  const file=event.target.files[0];
+  if(!file){setStatus("No mapping file loaded.");return;}
+  setStatus("Validating mapping CSV…");
+  try{
+    await new Promise(resolve=>setTimeout(resolve,0));
+    const loaded=parseMapping(await file.text());
+    index=loaded;el("lookup").disabled=false;
+    setStatus("Loaded "+loaded.size.toLocaleString()+" diagnosis codes from "+file.name);
+  }catch(e){setStatus("Mapping error: "+e.message,true);}
+});
+function node(tag,text,cls){
+  const result=document.createElement(tag);result.textContent=text;
+  if(cls)result.className=cls;return result;
+}
+function show(rows){
+  el("total").textContent=rows.length;
+  el("matched").textContent=rows.filter(r=>r.found).length;
+  el("missing").textContent=rows.filter(r=>!r.found).length;
+  const fragment=document.createDocumentFragment();
+  for(const r of rows.slice(0,200)){
+    const box=node("article","","result");
+    box.append(node("h3",r.input+(r.found?" — "+r.item.description:" — Unmapped"),r.found?"":"bad"));
+    if(r.found){
+      const list=node("ul","");
+      for(const c of r.item.categories)list.append(node("li",c.code+(c.description?" — "+c.description:"")));
+      box.append(list,node("p","Inpatient default: "+(r.item.inpatient||"Not specified")),
+        node("p","Outpatient default: "+(r.item.outpatient||"Not specified")));
+    }else box.append(node("p",r.reason));
+    fragment.append(box);
+  }
+  if(rows.length>200)fragment.append(node("p","Displaying the first 200 rows. Download CSV for the full batch."));
+  el("results").replaceChildren(fragment);
+}
+el("lookup").addEventListener("click",()=>{
+  if(!index)return;
+  const inputs=el("codes").value.split(/[,;\r\n\t]+/).map(x=>x.trim()).filter(Boolean);
+  if(!inputs.length){setStatus("Enter at least one code.",true);return;}
+  if(inputs.length>5000){setStatus("Maximum 5,000 codes per batch.",true);return;}
+  results=inputs.map(input=>{
+    const code=normCode(input),item=index.get(code);
+    return {input,code,item,found:!!item,reason:valid(code)?"Not in selected mapping release":"Invalid ICD-10-CM code format"};
+  });
+  show(results);el("export").disabled=false;
+  setStatus("Mapped "+results.filter(r=>r.found).length+" of "+results.length+" codes.");
+});
+function csv(value){
+  let str=String(value===undefined||value===null?"":value);
+  if(/^\s*[=+\-@]/.test(str))str="'"+str;
+  return '"'+str.replace(/"/g,'""')+'"';
+}
+el("export").addEventListener("click",()=>{
+  if(!results.length)return;
+  const rows=[["input_code","normalized_code","mapped","description","ccsr_categories","inpatient_default","outpatient_default","error"]];
+  for(const r of results)rows.push([r.input,r.code,String(r.found),r.item?.description||"",
+    r.item?.categories.map(x=>x.code).join(";")||"",r.item?.inpatient||"",r.item?.outpatient||"",r.found?"":r.reason]);
+  const text="\uFEFF"+rows.map(row=>row.map(csv).join(",")).join("\r\n")+"\r\n";
+  const url=URL.createObjectURL(new Blob([text],{type:"text/csv;charset=utf-8"}));
+  const link=document.createElement("a");link.href=url;link.download="ccsr-results.csv";
+  document.body.append(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+});
+})();
+</script></body></html>
